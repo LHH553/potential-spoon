@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Interactive Particle Flow Field Studio - A creative coding tool showcasing modern frontend technologies including TypeScript, Canvas 2D, and procedural generation" />
+  <meta name="theme-color" content="#0a0a1a" />
+  <title>Particle Flow Studio | Interactive Generative Art</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- Loading screen -->
+  <div class="loading-screen" aria-hidden="true">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Initializing Flow Field...</p>
+  </div>
+
+  <main id="app">
+    <!-- Canvas Layer -->
+    <canvas id="canvas" aria-label="Particle flow field visualization - interactive canvas"></canvas>
+
+    <!-- Header Bar -->
+    <header class="app-header" role="banner">
+      <div class="header-left">
+        <h1 class="logo">
+          <span class="logo-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.9"/>
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+              <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+            </svg>
+          </span>
+          <span class="logo-text">Particle Flow Studio</span>
+        </h1>
+      </div>
+      <div class="header-right">
+        <span id="fps" class="fps-counter" aria-live="polite">60 FPS</span>
+        <button id="perf-toggle" class="icon-btn" aria-label="Toggle performance monitor" title="Performance (P)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </button>
+        <button id="panel-toggle" class="icon-btn mobile-only" aria-label="Toggle control panel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Performance Monitor Container -->
+    <div id="perf-container" aria-label="Performance metrics"></div>
+
+    <!-- Minimap -->
+    <div class="minimap-container" aria-label="Particle density minimap">
+      <canvas class="minimap-canvas" width="160" height="100"></canvas>
+      <span class="minimap-label">Density Map</span>
+    </div>
+
+    <!-- Control Panel -->
+    <aside id="control-panel" class="control-panel" role="complementary" aria-label="Simulation controls">
+      <!-- Tab Bar -->
+      <nav class="tab-bar" role="tablist" aria-label="Control panel tabs">
+        <button class="tab-btn active" data-tab="presets" role="tab" aria-selected="true" title="1">
+          <span class="tab-icon">&#9670;</span>
+          <span class="tab-label">Presets</span>
+        </button>
+        <button class="tab-btn" data-tab="particles" role="tab" aria-selected="false" title="2">
+          <span class="tab-icon">&#9673;</span>
+          <span class="tab-label">Particles</span>
+        </button>
+        <button class="tab-btn" data-tab="field" role="tab" aria-selected="false" title="3">
+          <span class="tab-icon">&#8779;</span>
+          <span class="tab-label">Flow</span>
+        </button>
+        <button class="tab-btn" data-tab="render" role="tab" aria-selected="false" title="4">
+          <span class="tab-icon">&#9680;</span>
+          <span class="tab-label">Render</span>
+        </button>
+        <button class="tab-btn" data-tab="effects" role="tab" aria-selected="false" title="5">
+          <span class="tab-icon">&#10022;</span>
+          <span class="tab-label">Effects</span>
+        </button>
+      </nav>
+
+      <!-- Tab Panels -->
+      <div class="tab-content">
+        <!-- Presets Panel -->
+        <section data-panel="presets" class="tab-panel" role="tabpanel">
+          <div class="preset-grid">
+            <button data-preset="calm" class="preset-card">
+              <div class="preset-preview preset-calm-bg"></div>
+              <span class="preset-name">Calm</span>
+              <span class="preset-desc">Serene ocean flow</span>
+            </button>
+            <button data-preset="storm" class="preset-card">
+              <div class="preset-preview preset-storm-bg"></div>
+              <span class="preset-name">Storm</span>
+              <span class="preset-desc">Chaotic fire</span>
+            </button>
+            <button data-preset="galaxy" class="preset-card">
+              <div class="preset-preview preset-galaxy-bg"></div>
+              <span class="preset-name">Galaxy</span>
+              <span class="preset-desc">Cosmic spiral</span>
+            </button>
+            <button data-preset="nebula" class="preset-card">
+              <div class="preset-preview preset-nebula-bg"></div>
+              <span class="preset-name">Nebula</span>
+              <span class="preset-desc">Dense aurora</span>
+            </button>
+            <button data-preset="electric" class="preset-card">
+              <div class="preset-preview preset-electric-bg"></div>
+              <span class="preset-name">Electric</span>
+              <span class="preset-desc">Digital energy</span>
+            </button>
+            <button data-preset="minimal" class="preset-card">
+              <div class="preset-preview preset-minimal-bg"></div>
+              <span class="preset-name">Minimal</span>
+              <span class="preset-desc">Clean monochrome</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Particles Panel -->
+        <section data-panel="particles" class="tab-panel hidden" role="tabpanel">
+          <div class="control-group">
+            <label for="particle-count">Count <span id="particle-count-val" class="val">3000</span></label>
+            <input type="range" id="particle-count" min="500" max="8000" step="100" value="3000" />
+          </div>
+          <div class="control-group">
+            <label for="particle-speed">Max Speed <span id="particle-speed-val" class="val">3.0</span></label>
+            <input type="range" id="particle-speed" min="0.5" max="8" step="0.1" value="3" />
+          </div>
+          <div class="control-group">
+            <label for="particle-size">Size <span id="particle-size-val" class="val">2.5</span></label>
+            <input type="range" id="particle-size" min="0.5" max="5" step="0.1" value="2.5" />
+          </div>
+          <div class="control-group">
+            <label for="particle-life">Lifespan <span id="particle-life-val" class="val">200</span></label>
+            <input type="range" id="particle-life" min="50" max="500" step="10" value="200" />
+          </div>
+          <div class="control-group">
+            <label for="particle-friction">Friction <span id="particle-friction-val" class="val">0.980</span></label>
+            <input type="range" id="particle-friction" min="0.9" max="0.999" step="0.001" value="0.98" />
+          </div>
+          <div class="control-group">
+            <label for="mouse-force">Mouse Radius <span id="mouse-force-val" class="val">150</span></label>
+            <input type="range" id="mouse-force" min="50" max="400" step="10" value="150" />
+          </div>
+        </section>
+
+        <!-- Flow Field Panel -->
+        <section data-panel="field" class="tab-panel hidden" role="tabpanel">
+          <div class="control-group">
+            <label for="noise-scale">Noise Scale <span id="noise-scale-val" class="val">0.0030</span></label>
+            <input type="range" id="noise-scale" min="0.001" max="0.01" step="0.0005" value="0.003" />
+          </div>
+          <div class="control-group">
+            <label for="noise-speed">Animation Speed <span id="noise-speed-val" class="val">0.0003</span></label>
+            <input type="range" id="noise-speed" min="0" max="0.003" step="0.0001" value="0.0003" />
+          </div>
+          <div class="control-group">
+            <label for="turbulence">Turbulence <span id="turbulence-val" class="val">1.0</span></label>
+            <input type="range" id="turbulence" min="0.2" max="3" step="0.1" value="1" />
+          </div>
+          <div class="control-group">
+            <label for="curl-amount">Curl Noise <span id="curl-amount-val" class="val">0.50</span></label>
+            <input type="range" id="curl-amount" min="0" max="1" step="0.05" value="0.5" />
+          </div>
+          <div class="control-group toggle-group">
+            <label for="show-field" class="toggle-label">
+              <input type="checkbox" id="show-field" />
+              <span class="toggle-switch"></span>
+              Show Flow Vectors
+            </label>
+          </div>
+        </section>
+
+        <!-- Render Panel -->
+        <section data-panel="render" class="tab-panel hidden" role="tabpanel">
+          <div class="control-group">
+            <label for="trail-length">Trail Fade <span id="trail-length-val" class="val">0.030</span></label>
+            <input type="range" id="trail-length" min="0.005" max="0.15" step="0.005" value="0.03" />
+          </div>
+          <div class="control-group">
+            <label for="color-scheme">Color Scheme</label>
+            <select id="color-scheme">
+              <option value="aurora" selected>Aurora Borealis</option>
+              <option value="fire">Cosmic Fire</option>
+              <option value="ocean">Deep Ocean</option>
+              <option value="neon">Neon City</option>
+              <option value="sunset">Golden Sunset</option>
+              <option value="matrix">Digital Matrix</option>
+              <option value="monochrome">Monochrome</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="blend-mode">Blend Mode</label>
+            <select id="blend-mode">
+              <option value="screen" selected>Screen</option>
+              <option value="lighten">Lighten</option>
+              <option value="color-dodge">Color Dodge</option>
+              <option value="overlay">Overlay</option>
+              <option value="source-over">Normal</option>
+            </select>
+          </div>
+          <div class="control-group toggle-group">
+            <label for="show-connections" class="toggle-label">
+              <input type="checkbox" id="show-connections" />
+              <span class="toggle-switch"></span>
+              Particle Connections
+            </label>
+          </div>
+          <div class="control-group toggle-group">
+            <label for="show-glow" class="toggle-label">
+              <input type="checkbox" id="show-glow" checked />
+              <span class="toggle-switch"></span>
+              Glow Trails
+            </label>
+          </div>
+        </section>
+
+        <!-- Effects Panel -->
+        <section data-panel="effects" class="tab-panel hidden" role="tabpanel">
+          <div class="control-group toggle-group">
+            <label for="enable-bloom" class="toggle-label">
+              <input type="checkbox" id="enable-bloom" checked />
+              <span class="toggle-switch"></span>
+              Bloom Effect
+            </label>
+          </div>
+          <div class="control-group">
+            <label for="bloom-intensity">Bloom Intensity <span id="bloom-intensity-val" class="val">0.30</span></label>
+            <input type="range" id="bloom-intensity" min="0" max="1" step="0.05" value="0.3" />
+          </div>
+          <div class="control-group">
+            <label for="bloom-radius">Bloom Radius <span id="bloom-radius-val" class="val">8</span></label>
+            <input type="range" id="bloom-radius" min="2" max="20" step="1" value="8" />
+          </div>
+          <div class="control-group toggle-group">
+            <label for="enable-vignette" class="toggle-label">
+              <input type="checkbox" id="enable-vignette" checked />
+              <span class="toggle-switch"></span>
+              Vignette
+            </label>
+          </div>
+          <div class="control-group">
+            <label for="vignette-strength">Vignette Strength <span id="vignette-strength-val" class="val">0.30</span></label>
+            <input type="range" id="vignette-strength" min="0" max="0.8" step="0.05" value="0.3" />
+          </div>
+        </section>
+      </div>
+
+      <!-- Actions (always visible) -->
+      <div class="panel-actions">
+        <button id="play-pause" class="action-btn primary">
+          <span class="btn-icon">&#9208;</span> Pause
+        </button>
+        <div class="action-row">
+          <button id="clear-btn" class="action-btn">Clear</button>
+          <button id="export-btn" class="action-btn accent">Export PNG</button>
+        </div>
+      </div>
+
+      <!-- Keyboard shortcuts hint -->
+      <footer class="panel-footer">
+        <details class="shortcuts-details">
+          <summary>Keyboard Shortcuts</summary>
+          <div class="shortcut-list">
+            <div class="shortcut"><kbd>Space</kbd> Play/Pause</div>
+            <div class="shortcut"><kbd>C</kbd> Clear canvas</div>
+            <div class="shortcut"><kbd>E</kbd> Export image</div>
+            <div class="shortcut"><kbd>F</kbd> Toggle vectors</div>
+            <div class="shortcut"><kbd>P</kbd> Performance</div>
+            <div class="shortcut"><kbd>1-5</kbd> Switch tabs</div>
+          </div>
+        </details>
+        <p class="interaction-hint">
+          <span>Move: influence flow</span>
+          <span>Click: attract</span>
+          <span>Dbl-click: burst</span>
+        </p>
+      </footer>
+    </aside>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
