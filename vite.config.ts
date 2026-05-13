@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  root: '.',
+  base: '/potential-spoon/',
   build: {
     outDir: 'dist',
     sourcemap: true,
